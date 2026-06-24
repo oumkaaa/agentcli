@@ -7,6 +7,10 @@ from typing import Any
 import click
 
 
+LOW_RISK_MODE_DESCRIPTION = "Compliance guardrails are disabled in recruiter-only mode."
+COMPLIANCE_BLOCKED_ACTION = "No compliance recovery action is required in recruiter-only mode."
+
+
 def low_risk_blocked_commands() -> set[str]:
 	"""Return empty set (no commands blocked in recruiter mode)."""
 	return set()

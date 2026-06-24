@@ -120,15 +120,14 @@ def login_via_cdp(*, cdp_url: str | None = None, timeout: int = 120, platform: s
 		else:
 			raise TimeoutError(f"CDP 扫码登录超时（{timeout}s）")
 
-		try:
-			page.goto(home_url, wait_until="domcontentloaded", timeout=_NAV_TIMEOUT_MS)
-		except Exception:
-			pass
+		_warm_home_for_runtime(page, home_url, stage="CDP 登录后回到首页")
+		time.sleep(_STOKEN_GENERATION_WAIT)
 		all_cookies = {c["name"]: c["value"] for c in ctx.cookies() if cookie_domain in c.get("domain", "")}
 		ua = page.evaluate("navigator.userAgent")
+		stoken = _extract_stoken(page) if platform == "zhipin" else ""
 		x_zp_client_id = _extract_zhilian_client_id(page) if platform == "zhilian" else ""
 
-		result: dict[str, Any] = {"cookies": all_cookies, "stoken": "", "user_agent": ua}
+		result: dict[str, Any] = {"cookies": all_cookies, "stoken": stoken, "user_agent": ua}
 		if x_zp_client_id:
 			result["x_zp_client_id"] = x_zp_client_id
 		return result

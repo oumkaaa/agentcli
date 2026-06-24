@@ -74,6 +74,29 @@ def test_login_via_cdp_stops_playwright_when_user_agent_extraction_fails(mock_sl
 
 
 @patch("boss_agent_cli.auth.browser._extract_stoken", return_value="fresh-stoken")
+@patch("boss_agent_cli.auth.browser.probe_cdp", return_value="ws://localhost/devtools/browser")
+@patch("boss_agent_cli.auth.browser.time.sleep", return_value=None)
+def test_login_via_cdp_extracts_stoken_for_zhipin(mock_sleep, mock_probe_cdp, mock_extract_stoken):
+	mock_context = MagicMock()
+	mock_context.cookies.side_effect = [
+		[{"name": "wt2", "value": "token", "domain": ".zhipin.com"}],
+		[{"name": "wt2", "value": "token", "domain": ".zhipin.com"}],
+	]
+	mock_launcher, mock_playwright, mock_page = _mock_cdp_playwright(mock_context)
+	mock_page.evaluate.return_value = "UA"
+
+	with patch("boss_agent_cli.auth.browser.sync_playwright", return_value=mock_launcher):
+		result = login_via_cdp(timeout=1, platform="zhipin")
+
+	assert result["stoken"] == "fresh-stoken"
+	assert result["user_agent"] == "UA"
+	mock_page.goto.assert_any_call(HOME_URL, wait_until="domcontentloaded", timeout=_NAV_TIMEOUT_MS)
+	mock_extract_stoken.assert_called_once_with(mock_page)
+	mock_page.close.assert_called_once()
+	mock_playwright.stop.assert_called_once()
+
+
+@patch("boss_agent_cli.auth.browser._extract_stoken", return_value="fresh-stoken")
 @patch("boss_agent_cli.auth.browser.time.sleep", return_value=None)
 def test_login_via_browser_tolerates_networkidle_timeout(mock_sleep, mock_extract_stoken):
 	mock_page = MagicMock()
